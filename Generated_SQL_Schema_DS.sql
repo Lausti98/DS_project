@@ -2,80 +2,89 @@
 -- Please log an issue at https://redmine.postgresql.org/projects/pgadmin4/issues/new if you find any bugs, including reproduction steps.
 BEGIN;
 
-
-CREATE TABLE IF NOT EXISTS public.article
+DROP TABLE IF EXISTS public.article CASCADE;
+CREATE TABLE public.article
 (
     article_id integer NOT NULL,
-    domain character varying(50) COLLATE pg_catalog."default",
-    article_url character varying(200) COLLATE pg_catalog."default" NOT NULL,
+    title text COLLATE pg_catalog."default",
     content text COLLATE pg_catalog."default" NOT NULL,
-    title character varying(200) COLLATE pg_catalog."default" NOT NULL,
-    meta_description_object character varying(200) COLLATE pg_catalog."default",
+    article_url character varying(1000) COLLATE pg_catalog."default" NOT NULL,
+    domain character varying(1000) COLLATE pg_catalog."default" NOT NULL,
     scraped_at date NOT NULL,
     inserted_at date NOT NULL,
     updated_at date NOT NULL,
     CONSTRAINT article_pkey PRIMARY KEY (article_id)
 );
 
+DROP TABLE IF EXISTS public.author CASCADE;
 CREATE TABLE IF NOT EXISTS public.author
 (
     author_id integer NOT NULL,
-    name character varying(50) COLLATE pg_catalog."default",
+    name character varying(500) COLLATE pg_catalog."default",
     CONSTRAINT author_pkey PRIMARY KEY (author_id)
 );
 
+DROP TABLE IF EXISTS public.keyword CASCADE;
 CREATE TABLE IF NOT EXISTS public.keyword
 (
     kw_id integer NOT NULL,
-    keyword character varying(50) COLLATE pg_catalog."default",
+    keyword character varying(500) COLLATE pg_catalog."default",
     CONSTRAINT keyword_pkey PRIMARY KEY (kw_id)
 );
 
+DROP TABLE IF EXISTS public.meta_keyword CASCADE;
 CREATE TABLE IF NOT EXISTS public.meta_keyword
 (
     meta_kw_id integer NOT NULL,
-    keyword character varying(50) COLLATE pg_catalog."default",
+    keyword character varying(500) COLLATE pg_catalog."default",
     CONSTRAINT meta_keyword_pkey PRIMARY KEY (meta_kw_id)
 );
 
+DROP TABLE IF EXISTS public.tag CASCADE;
 CREATE TABLE IF NOT EXISTS public.tag
 (
     tag_id integer NOT NULL,
-    tag character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    tag character varying(500) COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT tag_pkey PRIMARY KEY (tag_id)
 );
 
+DROP TABLE IF EXISTS public.type CASCADE;
 CREATE TABLE IF NOT EXISTS public.type
 (
     type_id integer NOT NULL,
-    type character varying(50) COLLATE pg_catalog."default",
+    type character varying(500) COLLATE pg_catalog."default",
     CONSTRAINT type_pkey PRIMARY KEY (type_id)
 );
 
+DROP TABLE IF EXISTS public.article_author CASCADE;
 CREATE TABLE IF NOT EXISTS public.article_author
 (
     article_article_id integer NOT NULL,
     author_author_id integer NOT NULL
 );
 
+DROP TABLE IF EXISTS public.article_keyword CASCADE;
 CREATE TABLE IF NOT EXISTS public.article_keyword
 (
     article_article_id integer NOT NULL,
     keyword_kw_id integer NOT NULL
 );
 
+DROP TABLE IF EXISTS public.article_meta_keyword CASCADE;
 CREATE TABLE IF NOT EXISTS public.article_meta_keyword
 (
     article_article_id integer NOT NULL,
     meta_keyword_meta_kw_id integer NOT NULL
 );
 
+DROP TABLE IF EXISTS public.article_type CASCADE;
 CREATE TABLE IF NOT EXISTS public.article_type
 (
     article_article_id integer NOT NULL,
     type_type_id integer NOT NULL
 );
 
+DROP TABLE IF EXISTS public.article_tag CASCADE;
 CREATE TABLE IF NOT EXISTS public.article_tag
 (
     article_article_id integer NOT NULL,
