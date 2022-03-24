@@ -24,13 +24,13 @@ CREATE TABLE IF NOT EXISTS public.author
     CONSTRAINT author_pkey PRIMARY KEY (author_id)
 );
 
-DROP TABLE IF EXISTS public.keyword CASCADE;
-CREATE TABLE IF NOT EXISTS public.keyword
-(
-    kw_id integer NOT NULL,
-    keyword character varying(500) COLLATE pg_catalog."default",
-    CONSTRAINT keyword_pkey PRIMARY KEY (kw_id)
-);
+-- DROP TABLE IF EXISTS public.keyword CASCADE;
+-- CREATE TABLE IF NOT EXISTS public.keyword
+-- (
+--     kw_id integer NOT NULL,
+--     keyword character varying(500) COLLATE pg_catalog."default",
+--     CONSTRAINT keyword_pkey PRIMARY KEY (kw_id)
+-- );
 
 DROP TABLE IF EXISTS public.meta_keyword CASCADE;
 CREATE TABLE IF NOT EXISTS public.meta_keyword
@@ -56,42 +56,42 @@ CREATE TABLE IF NOT EXISTS public.type
     CONSTRAINT type_pkey PRIMARY KEY (type_id)
 );
 
-DROP TABLE IF EXISTS public.article_author CASCADE;
-CREATE TABLE IF NOT EXISTS public.article_author
+DROP TABLE IF EXISTS public.written_by;
+CREATE TABLE IF NOT EXISTS public.written_by
 (
-    article_article_id integer NOT NULL,
-    author_author_id integer NOT NULL
+    author_author_id integer NOT NULL,
+    article_article_id integer NOT NULL
 );
 
-DROP TABLE IF EXISTS public.article_keyword CASCADE;
-CREATE TABLE IF NOT EXISTS public.article_keyword
+-- DROP TABLE IF EXISTS public.article_keyword CASCADE;
+-- CREATE TABLE IF NOT EXISTS public.article_keyword
+-- (
+--     article_article_id integer NOT NULL,
+--     keyword_kw_id integer NOT NULL
+-- );
+
+DROP TABLE IF EXISTS public.has_meta_keyword CASCADE;
+CREATE TABLE IF NOT EXISTS public.has_meta_keyword
 (
-    article_article_id integer NOT NULL,
-    keyword_kw_id integer NOT NULL
+    meta_keyword_meta_kw_id integer NOT NULL,
+    article_article_id integer NOT NULL
 );
 
-DROP TABLE IF EXISTS public.article_meta_keyword CASCADE;
-CREATE TABLE IF NOT EXISTS public.article_meta_keyword
+DROP TABLE IF EXISTS public.has_type CASCADE;
+CREATE TABLE IF NOT EXISTS public.has_type
 (
-    article_article_id integer NOT NULL,
-    meta_keyword_meta_kw_id integer NOT NULL
+    type_type_id integer NOT NULL,
+    article_article_id integer NOT NULL
 );
 
-DROP TABLE IF EXISTS public.article_type CASCADE;
-CREATE TABLE IF NOT EXISTS public.article_type
+DROP TABLE IF EXISTS public.has_tag CASCADE;
+CREATE TABLE IF NOT EXISTS public.has_tag
 (
-    article_article_id integer NOT NULL,
-    type_type_id integer NOT NULL
+    tag_tag_id integer NOT NULL,
+    article_article_id integer NOT NULL
 );
 
-DROP TABLE IF EXISTS public.article_tag CASCADE;
-CREATE TABLE IF NOT EXISTS public.article_tag
-(
-    article_article_id integer NOT NULL,
-    tag_tag_id integer NOT NULL
-);
-
-ALTER TABLE IF EXISTS public.article_author
+ALTER TABLE IF EXISTS public.written_by
     ADD FOREIGN KEY (article_article_id)
     REFERENCES public.article (article_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -99,7 +99,7 @@ ALTER TABLE IF EXISTS public.article_author
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_author
+ALTER TABLE IF EXISTS public.written_by
     ADD FOREIGN KEY (author_author_id)
     REFERENCES public.author (author_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -107,7 +107,23 @@ ALTER TABLE IF EXISTS public.article_author
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_keyword
+-- ALTER TABLE IF EXISTS public.article_keyword
+--     ADD FOREIGN KEY (article_article_id)
+--     REFERENCES public.article (article_id) MATCH SIMPLE
+--     ON UPDATE NO ACTION
+--     ON DELETE NO ACTION
+--     NOT VALID;
+
+
+-- ALTER TABLE IF EXISTS public.article_keyword
+--     ADD FOREIGN KEY (keyword_kw_id)
+--     REFERENCES public.keyword (kw_id) MATCH SIMPLE
+--     ON UPDATE NO ACTION
+--     ON DELETE NO ACTION
+--     NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.has_meta_keyword
     ADD FOREIGN KEY (article_article_id)
     REFERENCES public.article (article_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -115,23 +131,7 @@ ALTER TABLE IF EXISTS public.article_keyword
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_keyword
-    ADD FOREIGN KEY (keyword_kw_id)
-    REFERENCES public.keyword (kw_id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION
-    NOT VALID;
-
-
-ALTER TABLE IF EXISTS public.article_meta_keyword
-    ADD FOREIGN KEY (article_article_id)
-    REFERENCES public.article (article_id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION
-    NOT VALID;
-
-
-ALTER TABLE IF EXISTS public.article_meta_keyword
+ALTER TABLE IF EXISTS public.has_meta_keyword
     ADD FOREIGN KEY (meta_keyword_meta_kw_id)
     REFERENCES public.meta_keyword (meta_kw_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -139,7 +139,7 @@ ALTER TABLE IF EXISTS public.article_meta_keyword
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_type
+ALTER TABLE IF EXISTS public.has_type
     ADD FOREIGN KEY (article_article_id)
     REFERENCES public.article (article_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -147,7 +147,7 @@ ALTER TABLE IF EXISTS public.article_type
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_type
+ALTER TABLE IF EXISTS public.has_type
     ADD FOREIGN KEY (type_type_id)
     REFERENCES public.type (type_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -155,7 +155,7 @@ ALTER TABLE IF EXISTS public.article_type
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_tag
+ALTER TABLE IF EXISTS public.has_tag
     ADD FOREIGN KEY (article_article_id)
     REFERENCES public.article (article_id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -163,7 +163,7 @@ ALTER TABLE IF EXISTS public.article_tag
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public.article_tag
+ALTER TABLE IF EXISTS public.has_tag
     ADD FOREIGN KEY (tag_tag_id)
     REFERENCES public.tag (tag_id) MATCH SIMPLE
     ON UPDATE NO ACTION
