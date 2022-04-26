@@ -1,12 +1,3 @@
-Type_ID	Type
-0	unreliable
-1	fake
-2	clickbait
-3	conspiracy
-4	reliable
-5	bias
-6	hate
-7	junksci
-8	political
-9	
-10	unknown
+version https://git-lfs.github.com/spec/v1
+oid sha256:f5454f9cd6c0f2ac0c9e291c4f4f0f62fe11347a4b1fe4baf1ccbf5c8f8a4ef4
+size 138
