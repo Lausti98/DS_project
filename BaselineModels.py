@@ -51,10 +51,6 @@ df = df.groupby(['id', 'title', 'type','domain', 'article_url', 'scraped_at', 'i
                                              ).reset_index()
 
 print(df)
-#for col in df.columns:
-#    print(col)
-
-df.to_csv('testing.csv', index=True, header=True, sep='\t')
 
 
 
