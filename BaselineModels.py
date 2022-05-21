@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 import psycopg2 
 
 # Connect with database
-conn = psycopg2.connect("host=localhost dbname=sample_db user=anderssteiness password=XXX!")
+conn = psycopg2.connect("host=localhost dbname=sample_db user=anderssteiness password=XXX")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
@@ -51,6 +51,13 @@ df = df.groupby(['id', 'title', 'type','domain', 'article_url', 'scraped_at', 'i
                                              ).reset_index()
 
 print(df)
+
+
+#tfidf_pipeline, transformer pipeline. Vectorization of # of words and normalization.
+tfidf_pipeline = Pipeline([
+    ("vect", CountVectorizer()),
+    ('tfidf', TfidfVectorizer())
+])
 
 
 
