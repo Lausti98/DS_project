@@ -1,4 +1,3 @@
 import numpy
 
-print("WUHU"
-)
+print("WUHU")
