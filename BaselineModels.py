@@ -16,7 +16,7 @@ from sklearn.metrics import f1_score
 
 # Connect with database
 conn = psycopg2.connect(
-    "host=localhost dbname=moviedb user=laust1 password=123")
+    "host=localhost dbname=sample_db user=anderssteiness password=XXX")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
@@ -73,6 +73,23 @@ X_train, X_test, Y_train, Y_test = train_test_split(
     x, y, test_size=0.8, random_state=0, stratify=y)
 
 
+svm_pipe = Pipelines['svm_pipeline']
+svm_params = Pipelines['svm_parameters']
+
+# data splitting into training and test - only 1 feature which is 'content'
+# x = df['content'] #single feature
+#y = df['Fake or Real']
+
+# creating train and test set for mutiple feature simple models
+df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + df['authors'].apply(lambda x: ','.join(map(str, x))).str.lower().str.replace(" ", "-")
+
+x = df['Multiple Features'][:10000]
+y = df['Fake or Real'][:10000]
+
+print(x)
+
+X_train, X_test, Y_train, Y_test = train_test_split(
+    x, y, test_size=0.2, random_state=0, stratify=y)
 def run_model(pipeline, parameters, model_name):
     grid_search = GridSearchCV(pipeline, parameters, verbose=1)
     print("Performing grid search...")
