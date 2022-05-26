@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 from pprint import pprint
@@ -57,7 +58,9 @@ df = df.fillna('')
 #and tags are being duplicated themselves due to cross-product, thus we create a function
 #that only includes unique values and does not contain '' value.
 df = df.groupby(['id', 'title', 'type','domain', 'article_url', 'scraped_at', 'inserted_at', 
-                                             'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''], 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}  
+                                             'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''], 
+                                             'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
+                                             'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}  
                                              ).reset_index()
 
 #df.loc[df['type'] == 'political', 'type'] = 'real'
@@ -65,17 +68,44 @@ df = df.groupby(['id', 'title', 'type','domain', 'article_url', 'scraped_at', 'i
 #df.loc[df['type'] == 'reliable', 'type'] = 'real'
 df['Fake or Real'] = np.where(df['type'] == 'fake', 1, 0) #fake = 1, real = 0
 
-print(df)
+
 
 
 #data splitting into training and test - only 1 feature which is 'content'
-folds = 4
-x = df['content']
-y = df['Fake or Real']
-X_train, X_test, Y_train, Y_test = train_test_split(x, y, test_size=0.8, random_state=0, stratify=y)
+#x = df['content'] #single feature 
+#y = df['Fake or Real']
+#x = df[["content", "title", "domain", "authors"]].reset_index(drop=True)#.to_numpy() 
+
+
+#creating train and test set for mutiple feature simple models
+#for multi feature simple models, we vectorize each and 
+vectorizer = CountVectorizer()
+transformer=TfidfTransformer() 
+title_vectors = vectorizer.fit_transform(df['title'][:10000])
+titile_tf_idf_vector= transformer.fit_transform(title_vectors)
+
+content_vectors = vectorizer.fit_transform(df['content'][:10000])
+content_tf_idf_vector= transformer.fit_transform(content_vectors)
+
+domain_vectors = vectorizer.fit_transform(df['domain'][:10000])
+domain_tf_idf_vector= transformer.fit_transform(domain_vectors)
+
+#authors_vectorizer = CountVectorizer()
+#authors_vectors = authors_vectorizer.fit_transform(df['authors'].str.lower())
+
+x=np.concatenate([pd.DataFrame.sparse.from_spmatrix(titile_tf_idf_vector),
+             pd.DataFrame.sparse.from_spmatrix(content_tf_idf_vector), 
+             pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector)],axis=1)
+y = df['Fake or Real'][:10000]
+X_train, X_test, Y_train, Y_test = train_test_split(x, y, test_size=0.2, random_state=0, stratify=y)
 
 
 
+"""
+model = LogisticRegression().fit(X_train[:100], Y_train[:100])
+LinearSVC_y_predicted = model.predict(X_test)
+print("LinearSVC f1_score multiple features: ", str(f1_score(Y_test, LinearSVC_y_predicted))) 
+"""
 
 
 
@@ -92,43 +122,40 @@ parameters = {
     "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
     # 'tfidf__use_idf': (True, False),
     'tfidf__norm': ('l1', 'l2'),
-    'svc__C': (1, 10)
+    'svc__C': (1, 10, 30)
 }
+
 
 
 # Find the best parameters for both the feature extraction and the
 # classifier
-
-grid_search = GridSearchCV(svm_pipeline, parameters, verbose=1) # , n_jobs=-1
+svm_grid_search = GridSearchCV(svm_pipeline, parameters, verbose=1) # , n_jobs=-1
 
 print("Performing grid search...")
 print("pipeline:", [name for name, _ in svm_pipeline.steps])
 print("parameters:")
 pprint(parameters)
 t0 = time()
-grid_search.fit(X_train[:5000], Y_train[:5000]) # we only take a sample due to computation time
-print("done in %0.3fs" % (time() - t0))
+svm_grid_search.fit(X_train[:10000], Y_train[:10000]) # we only take a sample due to computation time
+#print("done in %0.3fs" % (time() - t0))
 print()
 
-print("Best score: %0.3f" % grid_search.best_score_)
+print("Best score: %0.3f" % svm_grid_search.best_score_)
 print("Best parameters set:")
-best_parameters = grid_search.best_estimator_.get_params()
+best_parameters = svm_grid_search.best_estimator_.get_params()
 for param_name in sorted(parameters.keys()):
     print("\t%s: %r" % (param_name, best_parameters[param_name]))
  
 
 #fitting and prediction LinearSVC model with best parameters on test set
-
-LinearSVC_classifier = Pipeline([
-    ("vect", CountVectorizer(ngram_range = (1, 2), max_df = 1.0)),
-    ('tfidf', TfidfTransformer(norm = 'l2')), #cosine similarity
-    ('svc', LinearSVC(C = 10))
-])
- 
-LinearSVC_classifier.fit(X_train, Y_train)
-LinearSVC_y_predicted = LinearSVC_classifier.predict(X_test)
+LinearSVC_y_predicted = svm_grid_search.predict(X_test)
 print("LinearSVC f1_score: ", str(f1_score(Y_test, LinearSVC_y_predicted))) #, average ='weighted'
 # LinearSVC f1_score:  0.9780560819532559
+
+
+#multiple feature fit 
+LinearSVC_y_predicted = LinearSVC.predict(X_test)
+print("LinearSVC f1_score multiple features: ", str(f1_score(Y_test, LinearSVC_y_predicted))) 
 
 
 
@@ -149,9 +176,6 @@ KNN_parameters = {
     'KNN__n_neighbors': (1, 3, 5)
 }
 
-   
-       
-
 # Find the best parameters for both the feature extraction and the
 # classifier
 KNN_grid_search = GridSearchCV(KNN_pipeline, KNN_parameters, verbose=1) # , n_jobs=-1
@@ -161,8 +185,8 @@ print("pipeline:", [name for name, _ in KNN_pipeline.steps])
 print("parameters:")
 pprint(KNN_parameters)
 t0 = time()
-KNN_grid_search.fit(X_train[:5000], Y_train[:5000]) # we only take a sample due to computation time
-print("done in %0.3fs" % (time() - t0))
+KNN_grid_search.fit(X_train[:10000], Y_train[:10000]) # we only take a sample due to computation time
+#print("done in %0.3fs" % (time() - t0))
 print()
 
 print("Best score: %0.3f" % KNN_grid_search.best_score_)
@@ -173,17 +197,19 @@ for param_name in sorted(KNN_parameters.keys()):
 
 
 
-#fitting and prediction LinearSVC model with best parameters on test set
-KNN_classifier = Pipeline([
-    ("vect", CountVectorizer(ngram_range = (1, 2), max_df = 1.0)),
-    ('tfidf', TfidfTransformer(norm = 'l2')), #cosine similarity
-    ('svc', KNeighborsClassifier(n_neighbors = 5))
-])
- 
-KNN_classifier.fit(X_train, Y_train)
-KNNC_y_predicted = KNN_classifier.predict(X_test)
-print("KNN f1_score: ", str(f1_score(Y_test, KNNC_y_predicted))) 
+#fitting and prediction KNN model with best parameters on test set
+KNN_y_predicted = KNN_grid_search.predict(X_test)
+print("KNN f1_score: ", str(f1_score(Y_test, KNN_y_predicted))) 
 # KNN f1_score:  0.865467192829911
+
+#multiple feature fit 
+#KNN_y_predicted = KNeighborsClassifier.predict(X_test)
+#print("KNN f1_score multiple features: ", str(f1_score(Y_test, KNN_y_predicted))) 
+
+
+
+
+
 
 
 
@@ -213,7 +239,7 @@ print("pipeline:", [name for name, _ in RF_pipeline.steps])
 print("parameters:")
 pprint(RF_parameters)
 t0 = time()
-RF_grid_search.fit(X_train[:5000], Y_train[:5000]) # we only take a sample due to computation time
+RF_grid_search.fit(X_train[:10000], Y_train[:10000]) # we only take a sample due to computation time
 print("done in %0.3fs" % (time() - t0))
 print()
 
@@ -224,18 +250,14 @@ for param_name in sorted(RF_parameters.keys()):
     print("\t%s: %r" % (param_name, RF_best_parameters[param_name]))
 
 
-#fitting and prediction LinearSVC model with best parameters on test set
-RF_classifier = Pipeline([
-    ("vect", CountVectorizer(ngram_range = (1, 2), max_df = 1.0)),
-    ('tfidf', TfidfTransformer(norm = 'l1')), #cosine similarity
-    ('svc', RandomForestClassifier(max_depth = 30, n_estimators = 300))
-])
-
-RF_classifier.fit(X_train, Y_train)
-RF_y_predicted = RF_classifier.predict(X_test)
+#fitting and prediction Random Forest model with best parameters on test set
+RF_y_predicted = RF_grid_search.predict(X_test)
 print("RF f1_score: ", str(f1_score(Y_test, RF_y_predicted))) 
 # RF f1_score:  0.9711761278170016, but between 0.94-0.97
 
+#multiple feature fit 
+#RF_y_predicted = RandomForestClassifier.predict(X_test)
+#print("Random Forest f1_score multiple features: ", str(f1_score(Y_test, RF_y_predicted)))
 
 
 
@@ -245,7 +267,7 @@ print("RF f1_score: ", str(f1_score(Y_test, RF_y_predicted)))
 LR_pipeline = Pipeline([
     ("vect", CountVectorizer()),
     ('tfidf', TfidfTransformer()),
-    ('LR', LogisticRegression())
+    ('LR', LogisticRegression(solver='lbfgs', max_iter=500))
 ])
 
 LR_parameters = {
@@ -265,7 +287,7 @@ print("parameters:")
 pprint(LR_parameters)
 t0 = time()
 LR_grid_search.fit(X_train[:5000], Y_train[:5000]) # we only take a sample due to computation time
-print("done in %0.3fs" % (time() - t0))
+#print("done in %0.3fs" % (time() - t0))
 print()
 
 print("Best score: %0.3f" % LR_grid_search.best_score_)
@@ -274,21 +296,15 @@ LR_best_parameters = LR_grid_search.best_estimator_.get_params()
 for param_name in sorted(LR_parameters.keys()):
     print("\t%s: %r" % (param_name, LR_best_parameters[param_name]))
 
-
-#fitting and prediction LinearSVC model with best parameters on test set
-LR_classifier = Pipeline([
-    ("vect", CountVectorizer(ngram_range = (1, 2), max_df = 1.0)),
-    ('tfidf', TfidfTransformer(norm = 'l2')), #cosine similarity
-    ('svc', LogisticRegression(C = 20))
-])
-
-LR_classifier.fit(X_train, Y_train)
-LR_y_predicted = LR_classifier.predict(X_test)
+#fitting and prediction Logistic Regression model with best parameters on test set
+LR_y_predicted = LR_grid_search.predict(X_test)
 print("LR f1_score: ", str(f1_score(Y_test, LR_y_predicted))) 
 # LR f1_score:  0.9746363910268702
 
 
-
+#multiple feature fit 
+#LR_y_predicted = LogisticRegression.predict(X_test)
+#print("Logistic Regression f1_score multiple features: ", str(f1_score(Y_test, LR_y_predicted)))
 
 
 
