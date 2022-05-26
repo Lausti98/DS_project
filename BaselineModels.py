@@ -23,7 +23,7 @@ from sklearn.linear_model import LogisticRegression
 
 # Connect with database
 conn = psycopg2.connect(
-    "host=localhost dbname=moviedb user=laust1 password=123")
+    "host=localhost dbname=sample_db user=anderssteiness password=XXX")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
@@ -82,37 +82,19 @@ X_train, X_test, Y_train, Y_test = train_test_split(
 
 svm_pipe = Pipelines['svm_pipeline']
 svm_params = Pipelines['svm_parameters']
-# tfidf_pipeline, transformer pipeline. Vectorization of # of words and normalization.
-# tfidf_pipeline = Pipeline([
-#     ("vect", CountVectorizer()),
-#     ('tfidf', TfidfTransformer())
-# ])
+
 # data splitting into training and test - only 1 feature which is 'content'
 # x = df['content'] #single feature
 #y = df['Fake or Real']
-# x = df[["content", "title", "domain", "authors"]].reset_index(drop=True)#.to_numpy()
-
 
 # creating train and test set for mutiple feature simple models
-# for multi feature simple models, we vectorize each and
-vectorizer = CountVectorizer()
-transformer = TfidfTransformer()
-title_vectors = vectorizer.fit_transform(df['title'][:10000])
-titile_tf_idf_vector = transformer.fit_transform(title_vectors)
+df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + df['authors'].apply(lambda x: ','.join(map(str, x))).str.lower().str.replace(" ", "-")
 
-content_vectors = vectorizer.fit_transform(df['content'][:10000])
-content_tf_idf_vector = transformer.fit_transform(content_vectors)
-
-domain_vectors = vectorizer.fit_transform(df['domain'][:10000])
-domain_tf_idf_vector = transformer.fit_transform(domain_vectors)
-
-#authors_vectorizer = CountVectorizer()
-#authors_vectors = authors_vectorizer.fit_transform(df['authors'].str.lower())
-
-x = np.concatenate([pd.DataFrame.sparse.from_spmatrix(titile_tf_idf_vector),
-                   pd.DataFrame.sparse.from_spmatrix(content_tf_idf_vector),
-                   pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector)], axis=1)
+x = df['Multiple Features'][:10000]
 y = df['Fake or Real'][:10000]
+
+print(x)
+
 X_train, X_test, Y_train, Y_test = train_test_split(
     x, y, test_size=0.2, random_state=0, stratify=y)
 
