@@ -20,3 +20,12 @@
 #                    pd.DataFrame.sparse.from_spmatrix(content_tf_idf_vector),
 #                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector)]
 #                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector), axis=1)
+
+
+
+
+
+#overriding type
+#df.loc[df['type'] == 'political', 'type'] = 'real'
+#df.loc[df['type'] == 'clickbait', 'type'] = 'real'
+#df.loc[df['type'] == 'reliable', 'type'] = 'real'
