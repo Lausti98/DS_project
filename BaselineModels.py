@@ -67,37 +67,25 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
                                                ).reset_index()
 
-#df.loc[df['type'] == 'political', 'type'] = 'real'
-#df.loc[df['type'] == 'clickbait', 'type'] = 'real'
-#df.loc[df['type'] == 'reliable', 'type'] = 'real'
+
 df['Fake or Real'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
-# data splitting into training and test - only 1 feature which is 'content'
-folds = 4
-x = df['content']
-y = df['type']
-X_train, X_test, Y_train, Y_test = train_test_split(
-    x, y, test_size=0.8, random_state=0, stratify=y)
-
-
-svm_pipe = Pipelines['svm_pipeline']
-svm_params = Pipelines['svm_parameters']
 
 # data splitting into training and test - only 1 feature which is 'content'
-# x = df['content'] #single feature
+#x = df['content'] #single feature
 #y = df['Fake or Real']
 
 # creating train and test set for mutiple feature simple models
 df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + df['authors'].apply(lambda x: ','.join(map(str, x))).str.lower().str.replace(" ", "-")
+x = df['Multiple Features']
+y = df['Fake or Real']
 
-x = df['Multiple Features'][:10000]
-y = df['Fake or Real'][:10000]
-
-print(x)
+print(x.name)
 
 X_train, X_test, Y_train, Y_test = train_test_split(
     x, y, test_size=0.2, random_state=0, stratify=y)
+
 def run_model(pipeline, parameters, model_name):
     grid_search = GridSearchCV(pipeline, parameters, verbose=1)
     print("Performing grid search...")
@@ -106,8 +94,8 @@ def run_model(pipeline, parameters, model_name):
     pprint(parameters)
     t0 = time()
     # we only take a sample due to computation time
-    grid_search.fit(X_train[:5000], Y_train[:5000])
-    print("done in %0.3fs" % (time() - t0))
+    grid_search.fit(X_train[:10000], Y_train[:10000])
+    #print("done in %0.3fs" % (time() - t0))
     print()
 
     print("Best score: %0.3f" % grid_search.best_score_)
@@ -121,37 +109,34 @@ def run_model(pipeline, parameters, model_name):
     print(f'f1 score of {model_name}: {str(f1_score(Y_test, predictions))}')
 
 
-# creating train and test set for mutiple feature simple models
-# y = df['Fake or Real'][:10000]
-# X_train, X_test, Y_train, Y_test = train_test_split(
-#     x, y, test_size=0.2, random_state=0, stratify=y)
+
 
 
 ########### SVC CLASSIFIER ###############
 svc_pipe = Pipelines['svc_pipeline']
 svc_params = Pipelines['svc_parameters']
-run_model(svc_pipe, svc_params, 'SVC')
+#run_model(svc_pipe, svc_params, 'SVC')
 
 
 ########### K-nearest neighbors classifier ###########
 knn_pipe = Pipelines['KNN_pipeline']
 knn_params = Pipelines['KNN_parameters']
-run_model(knn_pipe, knn_params, 'KNN')
+#run_model(knn_pipe, knn_params, 'KNN')
 
 
 ######## Random forest classifier ############
 rf_pipe = Pipelines['RF_pipeline']
 rf_params = Pipelines['RF_parameters']
-run_model(rf_pipe, rf_params, 'Random Forest')
+#run_model(rf_pipe, rf_params, 'Random Forest')
 
 
 ######## Logistic Regression classifier ############
 lr_pipe = Pipelines['LR_pipeline']
 lr_params = Pipelines['LR_parameters']
-run_model(lr_pipe, lr_params, 'Logistic Regression')
+#run_model(lr_pipe, lr_params, 'Logistic Regression')
 
 
-########## SGD CLASSIFIER #####################################
+########## SGD CLASSIFIER #################
 sgd_pipe = Pipelines['SGD_pipeline']
 sgd_params = Pipelines['SGD_parameters']
 run_model(sgd_pipe, sgd_params, 'SGD')
