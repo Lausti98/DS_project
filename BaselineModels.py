@@ -9,17 +9,9 @@ import logging
 import psycopg2
 from Pipelines import Pipelines
 
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
-from sklearn.linear_model import LogisticRegression
 
 
 # Connect with database
