@@ -18,7 +18,7 @@ Pipelines = {
         "vect__max_df": (0.5, 1.0),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
-        'svc__C': (1, 10)
+        'svc__C': (1, 10, 30)
     },
     'KNN_pipeline': Pipeline([
         ("vect", CountVectorizer()),
@@ -63,6 +63,7 @@ Pipelines = {
         "vect__max_df": (0.5, 1.0),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
+        'SGD__penalty': ('l1', 'l2'),
         # 'SGD__max_iter': (30)
     }
 
