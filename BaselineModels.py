@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
 
+
 # Connect with database
 conn = psycopg2.connect(
     "host=localhost dbname=sample_db user=anderssteiness password=XXX")
@@ -50,9 +51,9 @@ df = df.fillna('')
 # we group by id, since from our query, each article with e.g. tags will appear for each
 # tag seperately, we implode on all columns using groupby function on all the attributes that
 # will be the same for each duplicate and we use aggregate function for the features/columns
-# that causes the duplication of tuples which include keywords and tags. Notice that keywords
-# and tags are being duplicated themselves due to cross-product, thus we create a function
-# that only includes unique values and does not contain '' value.
+# that causes the duplication of tuples which include keywords, authors, and tags. Notice that keywords,
+# authors, and tags are being duplicated themselves due to cross-product, thus we create a function
+# that only includes unique values and does not contain Nan value.
 df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', 'inserted_at',
                  'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
@@ -65,13 +66,13 @@ df['Fake or Real'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
 # data splitting into training and test - only 1 feature which is 'content'
-#x = df['content'] #single feature
-#y = df['Fake or Real']
+x = df['content'][:10000] #content only
 
 # creating train and test set for mutiple feature simple models
 df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + df['authors'].apply(lambda x: ','.join(map(str, x))).str.lower().str.replace(" ", "-")
-x = df['Multiple Features']
-y = df['Fake or Real']
+#x = df['Multiple Features'] #multiple meta-data
+
+y = df['Fake or Real'][:10000]
 
 print(x.name)
 
@@ -103,29 +104,28 @@ def run_model(pipeline, parameters, model_name):
 
 
 
-
 ########### SVC CLASSIFIER ###############
 svc_pipe = Pipelines['svc_pipeline']
 svc_params = Pipelines['svc_parameters']
-#run_model(svc_pipe, svc_params, 'SVC')
+run_model(svc_pipe, svc_params, 'SVC')
 
 
 ########### K-nearest neighbors classifier ###########
 knn_pipe = Pipelines['KNN_pipeline']
 knn_params = Pipelines['KNN_parameters']
-#run_model(knn_pipe, knn_params, 'KNN')
+run_model(knn_pipe, knn_params, 'KNN')
 
 
 ######## Random forest classifier ############
 rf_pipe = Pipelines['RF_pipeline']
 rf_params = Pipelines['RF_parameters']
-#run_model(rf_pipe, rf_params, 'Random Forest')
+run_model(rf_pipe, rf_params, 'Random Forest')
 
 
 ######## Logistic Regression classifier ############
 lr_pipe = Pipelines['LR_pipeline']
 lr_params = Pipelines['LR_parameters']
-#run_model(lr_pipe, lr_params, 'Logistic Regression')
+run_model(lr_pipe, lr_params, 'Logistic Regression')
 
 
 ########## SGD CLASSIFIER #################
