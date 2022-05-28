@@ -18,8 +18,8 @@
 
 # x = np.concatenate([pd.DataFrame.sparse.from_spmatrix(titile_tf_idf_vector),
 #                    pd.DataFrame.sparse.from_spmatrix(content_tf_idf_vector),
-#                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector)]
-#                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector), axis=1)
+#                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector)
+#                    pd.DataFrame.sparse.from_spmatrix(domain_tf_idf_vector]), axis=1)
 
 
 
@@ -29,3 +29,18 @@
 #df.loc[df['type'] == 'political', 'type'] = 'real'
 #df.loc[df['type'] == 'clickbait', 'type'] = 'real'
 #df.loc[df['type'] == 'reliable', 'type'] = 'real'
+
+
+
+
+#Advanced model
+"""
+content_vectors = vectorizer.fit_transform(df['content'][:5000])
+x1 = transformer.fit_transform(content_vectors)
+y1 = df['target'][:5000]
+
+x = torch.tensor(x1.toarray())
+y = torch.tensor(y1.to_numpy())
+print(x[:2])
+print(y[:2])
+"""
