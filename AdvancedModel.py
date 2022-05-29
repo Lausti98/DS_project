@@ -146,6 +146,7 @@ class NeuralNet(nn.Module):
         # ADD CODE HERE
         ###
         x = self.layer2(x)
+        #x = F.softmax(x, dim = 1)
 
         return x
 
@@ -155,6 +156,7 @@ model = NeuralNet(input_size = inputsize)
 
 # Define loss function
 loss_function = nn.MSELoss(reduction='sum')
+#loss_function = nn.BCELoss()
 
 # Instantiate optimizer
 learning_rate = 1e-4
@@ -176,6 +178,7 @@ def train(model, train_loader):
 
         # Calculate loss
         loss = loss_function(y_pred, y.float())
+        #loss = loss_function(y_pred.squeeze(), y.float())
 
         # Zero the gradients before running the backward pass.
         model.zero_grad()
@@ -192,14 +195,14 @@ def train(model, train_loader):
     return loss_total/len(train_loader.dataset)
 
 
-def test(model, test_loader):
+def test(model, valid_loader):
     '''One epoch of testing'''
 
     # Switch to test mode
     model.eval()
     
     loss_total = 0
-    for batch_idx, (x,y) in enumerate(test_loader):
+    for batch_idx, (x,y) in enumerate(valid_loader):
 
         # Make prediction from x (forward)
         y_pred = model(x.float())
@@ -210,7 +213,7 @@ def test(model, test_loader):
         loss_total += loss
 
     # Calculate average loss over entire dataset
-    return loss_total/len(test_loader.dataset)
+    return loss_total/len(valid_loader.dataset)
 
 
 
