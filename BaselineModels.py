@@ -50,42 +50,31 @@ df = df.fillna('')
 # we group by id, since from our query, each article with e.g. tags will appear for each
 # tag seperately, we implode on all columns using groupby function on all the attributes that
 # will be the same for each duplicate and we use aggregate function for the features/columns
-# that causes the duplication of tuples which include keywords and tags. Notice that keywords
-# and tags are being duplicated themselves due to cross-product, thus we create a function
-# that only includes unique values and does not contain '' value.
+# that causes the duplication of tuples which include keywords, authors, and tags. Notice that keywords,
+# authors, and tags are being duplicated themselves due to cross-product, thus we create a function
+# that only includes unique values and does not contain Nan value.
 df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', 'inserted_at',
                  'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
                                                ).reset_index()
 
-#df.loc[df['type'] == 'political', 'type'] = 'real'
-#df.loc[df['type'] == 'clickbait', 'type'] = 'real'
-#df.loc[df['type'] == 'reliable', 'type'] = 'real'
+
 df['Fake or Real'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
 # data splitting into training and test - only 1 feature which is 'content'
-folds = 4
-x = df['content']
-y = df['type']
-X_train, X_test, Y_train, Y_test = train_test_split(
-    x, y, test_size=0.8, random_state=0, stratify=y)
-
-
-# data splitting into training and test - only 1 feature which is 'content'
-# x = df['content'] #single feature
-#y = df['Fake or Real']
+x = df['content'][:10000]  # content only
 
 # creating train and test set for mutiple feature simple models
 df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + \
     df['authors'].apply(lambda x: ','.join(map(str, x))
                         ).str.lower().str.replace(" ", "-")
+# x = df['Multiple Features'] #multiple meta-data
 
-x = df['Multiple Features'][:10000]
 y = df['Fake or Real'][:10000]
 
-print(x)
+print(x.name)
 
 X_train, X_test, Y_train, Y_test = train_test_split(
     x, y, test_size=0.2, random_state=0, stratify=y)
@@ -99,8 +88,8 @@ def run_model(pipeline, parameters, model_name):
     pprint(parameters)
     t0 = time()
     # we only take a sample due to computation time
-    grid_search.fit(X_train[:5000], Y_train[:5000])
-    print("done in %0.3fs" % (time() - t0))
+    grid_search.fit(X_train[:10000], Y_train[:10000])
+    #print("done in %0.3fs" % (time() - t0))
     print()
 
     print("Best score: %0.3f" % grid_search.best_score_)
@@ -112,12 +101,6 @@ def run_model(pipeline, parameters, model_name):
     # predict y and compute f1 score
     predictions = grid_search.predict(X_test)
     print(f'f1 score of {model_name}: {str(f1_score(Y_test, predictions))}')
-
-
-# creating train and test set for mutiple feature simple models
-# y = df['Fake or Real'][:10000]
-# X_train, X_test, Y_train, Y_test = train_test_split(
-#     x, y, test_size=0.2, random_state=0, stratify=y)
 
 
 ########### SVC CLASSIFIER ###############
@@ -144,7 +127,7 @@ lr_params = Pipelines['LR_parameters']
 run_model(lr_pipe, lr_params, 'Logistic Regression')
 
 
-########## SGD CLASSIFIER #####################################
+########## SGD CLASSIFIER #################
 sgd_pipe = Pipelines['SGD_pipeline']
 sgd_params = Pipelines['SGD_parameters']
 run_model(sgd_pipe, sgd_params, 'SGD')
