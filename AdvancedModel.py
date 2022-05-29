@@ -80,6 +80,7 @@ x_vectorized = vectorizer.fit_transform(x_df)
 x = transformer.fit_transform(x_vectorized).toarray()
 y = df['target'][:50].to_numpy()
 
+
 # split data into training, validation, and test data (features and labels, x and y)
 split_idx = int(0.6*len(x)) # about 80%
 train_x, remaining_x = x[:split_idx], x[split_idx:]
@@ -120,16 +121,19 @@ print()
 print('Sample label size: ', sample_y.size())  # batch_size
 print('Sample label: \n', sample_y)
 
-"""
+
+
+
+
 class NeuralNet(nn.Module):
     '''Definition of Neural network architecture'''
 
-    def __init__(self):
+    def __init__(self, input_size):
         # Call base class constructor (this line must be present)
         super(NeuralNet, self).__init__()
 
         # Define layers
-        self.layer1 = nn.Linear(2,1)    # 2 inputs to 1 output
+        self.layer1 = nn.Linear(input_size,1)    # 2 inputs to 1 output
         ###
         # ADD CODE HERE
         ###
@@ -146,7 +150,8 @@ class NeuralNet(nn.Module):
         return x
 
 # Instantiate model
-model = NeuralNet()
+inputsize = x.shape[1]
+model = NeuralNet(input_size = inputsize)
 
 # Define loss function
 loss_function = nn.MSELoss(reduction='sum')
@@ -167,7 +172,7 @@ def train(model, train_loader):
     for batch_idx, (x,y) in enumerate(train_loader):
         
         # Make prediction from x (forward)
-        y_pred = model(x)
+        y_pred = model(x.float())
 
         # Calculate loss
         loss = loss_function(y_pred, y)
@@ -219,5 +224,5 @@ for epoch in range(epochs):
     if epoch %10 == 0:
         print('Epoch {:4d}\t train loss: {:f}\ttest loss: {:f}'.format(
             epoch, train_loss.item(), test_loss.item()))
-"""
+ 
 
