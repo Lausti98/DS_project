@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
+from torch.utils.data import TensorDataset, DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import psycopg2
 
 from sklearn.feature_extraction.text import CountVectorizer
@@ -65,38 +67,60 @@ df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 # data splitting into training and test - only 1 feature which is 'content'
 x = df['content'][:10000] #content only
 
-# creating train and test set for mutiple feature simple models
-df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + df['authors'].apply(lambda x: ','.join(map(str, x))).str.lower().str.replace(" ", "-")
-#x = df['Multiple Features'] #multiple meta-data
-
 
 
 vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 
 
-
-xy_df = df[['content', 'target']][:5000]
-xy_vectorized = vectorizer.fit_transform(xy_df)
-xy = transformer.fit_transform(xy_vectorized).toarray()
-
-train_split_fraction = 0.5
-batch_size = 10
-
-train_data = torch.utils.data.TensorDataset(
-    *torch.split(torch.from_numpy(
-        xy[:int(train_split_fraction*len(xy))]).float(), 2, dim=1))
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size,
-                                           shuffle=True)
-test_data = torch.utils.data.TensorDataset(
-    *torch.split(torch.from_numpy(
-        xy[int(train_split_fraction*len(xy)):]).float(), 2, dim=1))
-test_loader = torch.utils.data.DataLoader(test_data, batch_size=len(test_data),
-                                          shuffle=False)
-
-print(train_data[0][0].shape)
+x_df = df['content'][:50] #, 'target']
 
 
+x_vectorized = vectorizer.fit_transform(x_df)
+x = transformer.fit_transform(x_vectorized).toarray()
+y = df['target'][:50].to_numpy()
+
+# split data into training, validation, and test data (features and labels, x and y)
+split_idx = int(0.6*len(x)) # about 80%
+train_x, remaining_x = x[:split_idx], x[split_idx:]
+train_y, remaining_y = y[:split_idx], y[split_idx:]
+
+test_idx = (len(x)-split_idx)//2
+val_x, test_x = remaining_x[:test_idx-2], remaining_x[test_idx-2:-4]
+val_y, test_y = remaining_y[:test_idx-2], remaining_y[test_idx-2:-4]
+
+"""
+# print out the shapes of your resultant feature data
+print("\t\t\tFeature Shapes:")
+print("Train set: \t\t{}".format(train_x.shape), 
+      "\nValidation set: \t{}".format(val_x.shape),
+      "\nTest set: \t\t{}".format(test_x.shape))
+"""
+
+# create Tensor datasets
+train_data = TensorDataset(torch.from_numpy(train_x), torch.from_numpy(train_y))
+valid_data = TensorDataset(torch.from_numpy(val_x), torch.from_numpy(val_y))
+test_data = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
+
+# dataloaders
+batch_size =5
+
+# make sure the SHUFFLE your training data
+train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, num_workers=0)
+valid_loader = DataLoader(valid_data, shuffle=False, batch_size=batch_size, num_workers=0)
+test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, num_workers=0)
+
+# obtain one batch of training data
+dataiter = iter(train_loader)
+sample_x, sample_y = dataiter.next()
+
+print('Sample input size: ', sample_x.size())  # batch_size, seq_length
+print('Sample input: \n', sample_x)
+print()
+print('Sample label size: ', sample_y.size())  # batch_size
+print('Sample label: \n', sample_y)
+
+"""
 class NeuralNet(nn.Module):
     '''Definition of Neural network architecture'''
 
@@ -141,7 +165,7 @@ def train(model, train_loader):
 
     loss_total = 0
     for batch_idx, (x,y) in enumerate(train_loader):
-
+        
         # Make prediction from x (forward)
         y_pred = model(x)
 
@@ -195,5 +219,5 @@ for epoch in range(epochs):
     if epoch %10 == 0:
         print('Epoch {:4d}\t train loss: {:f}\ttest loss: {:f}'.format(
             epoch, train_loss.item(), test_loss.item()))
-
+"""
 
