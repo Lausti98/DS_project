@@ -114,14 +114,14 @@ test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, num_wo
 # obtain one batch of training data
 dataiter = iter(train_loader)
 sample_x, sample_y = dataiter.next()
-
+"""
 print('Sample input size: ', sample_x.size())  # batch_size, seq_length
 print('Sample input: \n', sample_x)
 print()
 print('Sample label size: ', sample_y.size())  # batch_size
 print('Sample label: \n', sample_y)
 
-
+"""
 
 
 
@@ -133,30 +133,32 @@ class NeuralNet(nn.Module):
         super(NeuralNet, self).__init__()
 
         # Define layers
-        self.layer1 = nn.Linear(input_size,1)    # 2 inputs to 1 output
+        self.layer1 = nn.Linear(input_size,10)    # 2 inputs to 1 output
         ###
-        # ADD CODE HERE
+        self.RelU = nn.ReLU()
         ###
-        self.layer2 = nn.Linear(1,1)    # 1 input to 1 output
+        self.layer2 = nn.Linear(10, 1) 
+
+        self
 
     def forward(self, x):
         '''Define forward operation (backward is automatically deduced)'''
         x = self.layer1(x) 
         ###
-        # ADD CODE HERE
+        x = self.RelU(x)
         ###
         x = self.layer2(x)
-        #x = F.softmax(x, dim = 1)
+        
 
-        return x
+        return torch.sigmoid(x)
 
 # Instantiate model
 inputsize = x.shape[1]
 model = NeuralNet(input_size = inputsize)
 
 # Define loss function
-loss_function = nn.MSELoss(reduction='sum')
-#loss_function = nn.BCELoss()
+#loss_function = nn.MSELoss(reduction='sum')
+loss_function = nn.BCELoss()
 
 # Instantiate optimizer
 learning_rate = 1e-4
@@ -177,10 +179,10 @@ def train(model, train_loader):
         y_pred = model(x.float())
 
         # Calculate loss
-        loss = loss_function(y_pred, y.float())
-        #loss = loss_function(y_pred.squeeze(), y.float())
+        #loss = loss_function(y_pred, y.float())
+        loss = loss_function(y_pred, y.unsqueeze(1).float())
 
-        # Zero the gradients before running the backward pass.
+        # Zero the gradients before running the backward pass. .squeeze()
         model.zero_grad()
 
         # Backward pass: compute gradient of the loss with respect to all the learnable
