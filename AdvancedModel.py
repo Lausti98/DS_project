@@ -219,10 +219,11 @@ epochs = 1000
 for epoch in range(epochs):
 
     train_loss = train(model, train_loader)
-    test_loss = test(model, test_loader)
-
+    validation_loss = test(model, valid_loader)
+    num_correct = 0
+    
     if epoch %10 == 0:
-        print('Epoch {:4d}\t train loss: {:f}\ttest loss: {:f}'.format(
-            epoch, train_loss.item(), test_loss.item()))
+        print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
+            epoch, train_loss.item(), validation_loss.item()))
  
 
