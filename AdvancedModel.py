@@ -175,7 +175,7 @@ def train(model, train_loader):
         y_pred = model(x.float())
 
         # Calculate loss
-        loss = loss_function(y_pred, y)
+        loss = loss_function(y_pred, y.float())
 
         # Zero the gradients before running the backward pass.
         model.zero_grad()
@@ -202,10 +202,10 @@ def test(model, test_loader):
     for batch_idx, (x,y) in enumerate(test_loader):
 
         # Make prediction from x (forward)
-        y_pred = model(x)
+        y_pred = model(x.float())
         
         # Calculate loss
-        loss = loss_function(y_pred, y)
+        loss = loss_function(y_pred, y.float())
         
         loss_total += loss
 
