@@ -150,6 +150,7 @@ class NeuralNet(nn.Module):
         #x = self.hid1(x)
         x = self.relu(x)
         x = self.layer2(x)
+        #x = F.softmax(x, dim = 1)
 
         return x
 
@@ -199,7 +200,7 @@ def train(model, train_loader):
     return loss_total/len(train_loader.dataset)
 
 
-def test(model, test_loader):
+def test(model, valid_loader):
     '''One epoch of testing'''
 
     # Switch to test mode
@@ -218,7 +219,7 @@ def test(model, test_loader):
         loss_total += loss
 
     # Calculate average loss over entire dataset
-    return loss_total/len(test_loader.dataset)
+    return loss_total/len(valid_loader.dataset)
 
 
 epochs = 1000
