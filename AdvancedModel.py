@@ -1,3 +1,4 @@
+from tkinter import HIDDEN
 import numpy as np
 import pandas as pd
 import torch
@@ -9,7 +10,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import psycopg2
 
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer 
+from sklearn.feature_extraction.text import TfidfTransformer
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -44,6 +45,7 @@ df = pd.DataFrame(cur.fetchall(), columns=['id', 'title', 'type', 'domain',
                                            'updated_at', 'authors', 'keywords', 'tags',
                                            'content'])
 
+
 # if blank values are NaN first replace to ''
 df = df.fillna('')
 
@@ -57,32 +59,35 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                  'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
-                                               ).reset_index()
+                                               ).reset_index().drop_duplicates(subset='content')
 
+ids = df["content"]
+#print(df['content'].duplicated().any())
+print(df)
+#print(df[ids.isin(ids[ids.duplicated()])])
+#df
 
 df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
-
 # data splitting into training and test - only 1 feature which is 'content'
-x = df['content'][:10000] #content only
-
+x = df['content'][:10000]  # content only
 
 
 vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 
 
-x_df = df['content'][:50] #, 'target']
+x_df = df['content'][:5000]  # , 'target']
 
 
 x_vectorized = vectorizer.fit_transform(x_df)
 x = transformer.fit_transform(x_vectorized).toarray()
-y = df['target'][:50].to_numpy()
+y = df['target'][:5000].to_numpy()
 
 
 # split data into training, validation, and test data (features and labels, x and y)
-split_idx = int(0.6*len(x)) # about 80%
+split_idx = int(0.6*len(x))  # about 80%
 train_x, remaining_x = x[:split_idx], x[split_idx:]
 train_y, remaining_y = y[:split_idx], y[split_idx:]
 
@@ -99,17 +104,21 @@ print("Train set: \t\t{}".format(train_x.shape),
 """
 
 # create Tensor datasets
-train_data = TensorDataset(torch.from_numpy(train_x), torch.from_numpy(train_y))
+train_data = TensorDataset(torch.from_numpy(
+    train_x), torch.from_numpy(train_y))
 valid_data = TensorDataset(torch.from_numpy(val_x), torch.from_numpy(val_y))
 test_data = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
 
 # dataloaders
-batch_size =5
+batch_size = 5
 
 # make sure the SHUFFLE your training data
-train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, num_workers=0)
-valid_loader = DataLoader(valid_data, shuffle=False, batch_size=batch_size, num_workers=0)
-test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, num_workers=0)
+train_loader = DataLoader(train_data, shuffle=True,
+                          batch_size=batch_size, num_workers=0)
+valid_loader = DataLoader(valid_data, shuffle=False,
+                          batch_size=batch_size, num_workers=0)
+test_loader = DataLoader(test_data, shuffle=False,
+                         batch_size=batch_size, num_workers=0)
 
 # obtain one batch of training data
 dataiter = iter(train_loader)
@@ -128,42 +137,44 @@ print('Sample label: \n', sample_y)
 class NeuralNet(nn.Module):
     '''Definition of Neural network architecture'''
 
-    def __init__(self, input_size):
+    def __init__(self, input_size, hid_size):
         # Call base class constructor (this line must be present)
         super(NeuralNet, self).__init__()
 
         # Define layers
-        self.layer1 = nn.Linear(input_size,10)    # 2 inputs to 1 output
+        self.layer1 = nn.Linear(input_size, hid_size)    # 2 inputs to 1 output
         ###
         self.RelU = nn.ReLU()
         ###
-        self.layer2 = nn.Linear(10, 1) 
-
-        self
+        self.hid1 = nn.Linear(hid_size, hid_size)
+        self.relu = nn.ReLU()
+        self.layer2 = nn.Linear(hid_size, 1)    # 1 input to 1 output
 
     def forward(self, x):
         '''Define forward operation (backward is automatically deduced)'''
-        x = self.layer1(x) 
+        x = self.layer1(x)
         ###
         x = self.RelU(x)
         ###
+        x = self.hid1(x)
+        x = self.relu(x)
         x = self.layer2(x)
         
 
         return torch.sigmoid(x)
 
+
 # Instantiate model
 inputsize = x.shape[1]
-model = NeuralNet(input_size = inputsize)
+hidden_size = 4
+model = NeuralNet(input_size=inputsize, hid_size=hidden_size)
 
 # Define loss function
-#loss_function = nn.MSELoss(reduction='sum')
-loss_function = nn.BCELoss()
-
+#loss_function = nn.CrossEntropyLoss()
+loss_function = nn.BCEWithLogitsLoss()
 # Instantiate optimizer
 learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
 
 
 def train(model, train_loader):
@@ -173,14 +184,15 @@ def train(model, train_loader):
     model.train()
 
     loss_total = 0
-    for batch_idx, (x,y) in enumerate(train_loader):
-        
+    for batch_idx, (x, y) in enumerate(train_loader):
+
         # Make prediction from x (forward)
         y_pred = model(x.float())
+        y_pred = torch.reshape(y_pred, (-1,))
+        #print('y_pred:', y_pred)
 
         # Calculate loss
-        #loss = loss_function(y_pred, y.float())
-        loss = loss_function(y_pred, y.unsqueeze(1).float())
+        loss = loss_function(y_pred.float(), y.float())
 
         # Zero the gradients before running the backward pass. .squeeze()
         model.zero_grad()
@@ -202,22 +214,21 @@ def test(model, valid_loader):
 
     # Switch to test mode
     model.eval()
-    
+
     loss_total = 0
-    for batch_idx, (x,y) in enumerate(valid_loader):
+    for batch_idx, (x, y) in enumerate(valid_loader):
 
         # Make prediction from x (forward)
         y_pred = model(x.float())
-        
+        y_pred = torch.reshape(y_pred, (-1,))
+
         # Calculate loss
-        loss = loss_function(y_pred, y.float())
-        
+        loss = loss_function(y_pred.float(), y.float())
+
         loss_total += loss
 
     # Calculate average loss over entire dataset
     return loss_total/len(valid_loader.dataset)
-
-
 
 
 epochs = 1000
@@ -226,9 +237,12 @@ for epoch in range(epochs):
     train_loss = train(model, train_loader)
     validation_loss = test(model, valid_loader)
     num_correct = 0
-    
-    if epoch %10 == 0:
+
+    if epoch % 10 == 0:
         print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
             epoch, train_loss.item(), validation_loss.item()))
- 
+
+
+
+
 
