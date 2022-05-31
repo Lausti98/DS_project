@@ -16,7 +16,7 @@ from sklearn.metrics import f1_score
 
 # Connect with database
 conn = psycopg2.connect(
-    "host=localhost dbname=moviedb user=laust1 password=XXX")
+    "host=localhost dbname=sample_db user=anderssteiness password=XXX")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
@@ -57,22 +57,22 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                  'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
-                                               ).reset_index()
+                                               ).reset_index().drop_duplicates(subset='content')
 
 
 df['Fake or Real'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
 # data splitting into training and test - only 1 feature which is 'content'
-x = df['content'][:10000]  # content only
+#x = df['content'][:15000]  # content only
 
 # creating train and test set for mutiple feature simple models
 df['Multiple Features'] = df['title'] + df['content'] + df['domain'] + \
     df['authors'].apply(lambda x: ','.join(map(str, x))
                         ).str.lower().str.replace(" ", "-")
-# x = df['Multiple Features'] #multiple meta-data
+x = df['Multiple Features'][:15000] #multiple meta-data
 
-y = df['Fake or Real'][:10000]
+y = df['Fake or Real'][:15000]
 
 print(x.name)
 
