@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 
 # Connect with database
 conn = psycopg2.connect(
-    "host=localhost dbname=moviedb user=laust1 password=123")
+    "host=localhost dbname=sample_db user=anderssteiness password=XXX")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
 try:
     cur.execute("""
-    select article.id, title, type, domain, article_url, scraped_at, inserted_at, updated_at, a.name, keyword, tag, content  
+    select article.id, title, type, domain, article_url, scraped_at, inserted_at, updated_at, a.name, keyword, tag, content
 	    from article
         inner join has_type ht on article.id = ht.article_id
         inner join type t on ht.type_id = t.id
@@ -46,6 +46,7 @@ df = pd.DataFrame(cur.fetchall(), columns=['id', 'title', 'type', 'domain',
                                            'updated_at', 'authors', 'keywords', 'tags',
                                            'content'])
 
+
 # if blank values are NaN first replace to ''
 df = df.fillna('')
 
@@ -59,8 +60,13 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                  'updated_at', 'content']).agg({'keywords': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'tags': lambda x: [x for x in list(set(x.tolist())) if str(x) != ''],
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
-                                               ).reset_index()
+                                               ).reset_index().drop_duplicates(subset='content')
 
+ids = df["content"]
+# print(df['content'].duplicated().any())
+print(df)
+# print(df[ids.isin(ids[ids.duplicated()])])
+# df
 
 df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
@@ -95,7 +101,7 @@ print(test_x.shape, test_x_raw.shape)
 """
 # print out the shapes of your resultant feature data
 print("\t\t\tFeature Shapes:")
-print("Train set: \t\t{}".format(train_x.shape), 
+print("Train set: \t\t{}".format(train_x.shape),
       "\nValidation set: \t{}".format(val_x.shape),
       "\nTest set: \t\t{}".format(test_x.shape))
 """
@@ -138,7 +144,7 @@ class NeuralNet(nn.Module):
         # Define layers
         self.layer1 = nn.Linear(input_size, hid_size)    # 2 inputs to 1 output
         ###
-        # ADD CODE HERE
+        self.RelU = nn.ReLU()
         ###
         self.sig = nn.Sigmoid()
         self.hid1 = nn.Linear(hid_size, hid_size)
@@ -149,24 +155,24 @@ class NeuralNet(nn.Module):
         '''Define forward operation (backward is automatically deduced)'''
         x = self.layer1(x)
         ###
-        # ADD CODE HERE
+        x = self.RelU(x)
         ###
         x = self.hid1(x)
         x = self.relu(x)
         x = self.layer2(x)
         x = self.sig(x)
-        #x = F.softmax(x, dim = 1)
+        # x = F.softmax(x, dim = 1)
 
         return x
 
 
 # Instantiate model
 inputsize = x.shape[1]
-hidden_size = 8
+hidden_size = 4
 model = NeuralNet(input_size=inputsize, hid_size=hidden_size)
 
 # Define loss function
-#loss_function = nn.CrossEntropyLoss()
+# loss_function = nn.CrossEntropyLoss()
 loss_function = nn.BCELoss()
 # Instantiate optimizer
 learning_rate = 1e-4
@@ -190,7 +196,7 @@ def train(model, train_loader):
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
 
-        # Zero the gradients before running the backward pass.
+        # Zero the gradients before running the backward pass. .squeeze()
         model.zero_grad()
 
         # Backward pass: compute gradient of the loss with respect to all the learnable
@@ -231,13 +237,9 @@ def test(model, valid_loader):
 if __name__ == "__main__":
     epochs = 140
     for epoch in range(epochs):
-
         train_loss = train(model, train_loader)
         validation_loss = test(model, valid_loader)
-        num_correct = 0
 
         if epoch % 10 == 0:
             print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
                 epoch, train_loss.item(), validation_loss.item()))
-
-    torch.save(model.state_dict(), "./adv_model.pth")
