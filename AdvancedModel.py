@@ -11,6 +11,7 @@ import psycopg2
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.metrics import f1_score
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -72,12 +73,12 @@ vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 
 
-x_df = df['content'][:500]  # , 'target']
+x_df = df['content'][:1000]  # , 'target']
 
 
 x_vectorized = vectorizer.fit_transform(x_df)
 x = transformer.fit_transform(x_vectorized).toarray()
-y = df['target'][:500].to_numpy()
+y = df['target'][:1000].to_numpy()
 
 
 # split data into training, validation, and test data (features and labels, x and y)
@@ -88,6 +89,8 @@ train_y, remaining_y = y[:split_idx], y[split_idx:]
 test_idx = (len(x)-split_idx)//2
 val_x, test_x = remaining_x[:test_idx-2], remaining_x[test_idx-2:-4]
 val_y, test_y = remaining_y[:test_idx-2], remaining_y[test_idx-2:-4]
+test_x_raw = x_df[split_idx+test_idx-2:-4]
+print(test_x.shape, test_x_raw.shape)
 
 """
 # print out the shapes of your resultant feature data
@@ -104,7 +107,7 @@ valid_data = TensorDataset(torch.from_numpy(val_x), torch.from_numpy(val_y))
 test_data = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
 
 # dataloaders
-batch_size = 5
+batch_size = 8
 
 # make sure the SHUFFLE your training data
 train_loader = DataLoader(train_data, shuffle=True,
@@ -118,11 +121,11 @@ test_loader = DataLoader(test_data, shuffle=False,
 dataiter = iter(train_loader)
 sample_x, sample_y = dataiter.next()
 
-print('Sample input size: ', sample_x.size())  # batch_size, seq_length
-print('Sample input: \n', sample_x)
-print()
-print('Sample label size: ', sample_y.size())  # batch_size
-print('Sample label: \n', sample_y)
+# print('Sample input size: ', sample_x.size())  # batch_size, seq_length
+# print('Sample input: \n', sample_x)
+# print()
+# print('Sample label size: ', sample_y.size())  # batch_size
+# print('Sample label: \n', sample_y)
 
 
 class NeuralNet(nn.Module):
@@ -137,6 +140,7 @@ class NeuralNet(nn.Module):
         ###
         # ADD CODE HERE
         ###
+        self.sig = nn.Sigmoid()
         self.hid1 = nn.Linear(hid_size, hid_size)
         self.relu = nn.ReLU()
         self.layer2 = nn.Linear(hid_size, 1)    # 1 input to 1 output
@@ -147,9 +151,10 @@ class NeuralNet(nn.Module):
         ###
         # ADD CODE HERE
         ###
-        #x = self.hid1(x)
+        x = self.hid1(x)
         x = self.relu(x)
         x = self.layer2(x)
+        x = self.sig(x)
         #x = F.softmax(x, dim = 1)
 
         return x
@@ -162,7 +167,7 @@ model = NeuralNet(input_size=inputsize, hid_size=hidden_size)
 
 # Define loss function
 #loss_function = nn.CrossEntropyLoss()
-loss_function = nn.BCEWithLogitsLoss()
+loss_function = nn.BCELoss()
 # Instantiate optimizer
 learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -180,7 +185,7 @@ def train(model, train_loader):
         # Make prediction from x (forward)
         y_pred = model(x.float())
         y_pred = torch.reshape(y_pred, (-1,))
-        #print('y_pred:', y_pred)
+        # print('y_pred:', y_pred)
 
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
@@ -207,11 +212,12 @@ def test(model, valid_loader):
     model.eval()
 
     loss_total = 0
-    for batch_idx, (x, y) in enumerate(test_loader):
+    for batch_idx, (x, y) in enumerate(valid_loader):
 
         # Make prediction from x (forward)
         y_pred = model(x.float())
         y_pred = torch.reshape(y_pred, (-1,))
+        # print(torch.sigmoid(y_pred))
 
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
@@ -222,13 +228,16 @@ def test(model, valid_loader):
     return loss_total/len(valid_loader.dataset)
 
 
-epochs = 1000
-for epoch in range(epochs):
+if __name__ == "__main__":
+    epochs = 140
+    for epoch in range(epochs):
 
-    train_loss = train(model, train_loader)
-    validation_loss = test(model, valid_loader)
-    num_correct = 0
+        train_loss = train(model, train_loader)
+        validation_loss = test(model, valid_loader)
+        num_correct = 0
 
-    if epoch % 10 == 0:
-        print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
-            epoch, train_loss.item(), validation_loss.item()))
+        if epoch % 10 == 0:
+            print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
+                epoch, train_loss.item(), validation_loss.item()))
+
+    torch.save(model.state_dict(), "./adv_model.pth")

@@ -8,6 +8,7 @@ from time import time
 import logging
 import psycopg2
 from Pipelines import Pipelines
+import joblib
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
@@ -91,6 +92,8 @@ def run_model(pipeline, parameters, model_name):
     grid_search.fit(X_train[:10000], Y_train[:10000])
     #print("done in %0.3fs" % (time() - t0))
     print()
+    filename = f'{model_name}_finalized.sav'
+    joblib.dump(grid_search, filename)
 
     print("Best score: %0.3f" % grid_search.best_score_)
     print("Best parameters set:")
@@ -127,10 +130,10 @@ lr_params = Pipelines['LR_parameters']
 run_model(lr_pipe, lr_params, 'Logistic Regression')
 
 
-########## SGD CLASSIFIER #################
-sgd_pipe = Pipelines['SGD_pipeline']
-sgd_params = Pipelines['SGD_parameters']
-run_model(sgd_pipe, sgd_params, 'SGD')
+# ########## SGD CLASSIFIER #################
+# sgd_pipe = Pipelines['SGD_pipeline']
+# sgd_params = Pipelines['SGD_parameters']
+# run_model(sgd_pipe, sgd_params, 'SGD')
 
 
 # Close communication with the database
