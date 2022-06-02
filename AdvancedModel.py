@@ -61,11 +61,7 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
                                                ).reset_index().drop_duplicates(subset='content')
 
-ids = df["content"]
-#print(df['content'].duplicated().any())
-print(df)
-#print(df[ids.isin(ids[ids.duplicated()])])
-#df
+
 
 df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
@@ -78,12 +74,12 @@ vectorizer = CountVectorizer()
 transformer = TfidfTransformer()
 
 
-x_df = df['content'][:5000]  # , 'target']
+x_df = df['content'][:1000]  # , 'target']
 
 
 x_vectorized = vectorizer.fit_transform(x_df)
 x = transformer.fit_transform(x_vectorized).toarray()
-y = df['target'][:5000].to_numpy()
+y = df['target'][:1000].to_numpy()
 
 
 # split data into training, validation, and test data (features and labels, x and y)
@@ -94,6 +90,7 @@ train_y, remaining_y = y[:split_idx], y[split_idx:]
 test_idx = (len(x)-split_idx)//2
 val_x, test_x = remaining_x[:test_idx-2], remaining_x[test_idx-2:-4]
 val_y, test_y = remaining_y[:test_idx-2], remaining_y[test_idx-2:-4]
+
 
 """
 # print out the shapes of your resultant feature data
@@ -110,7 +107,7 @@ valid_data = TensorDataset(torch.from_numpy(val_x), torch.from_numpy(val_y))
 test_data = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
 
 # dataloaders
-batch_size = 5
+batch_size = 8
 
 # make sure the SHUFFLE your training data
 train_loader = DataLoader(train_data, shuffle=True,
@@ -140,11 +137,10 @@ class NeuralNet(nn.Module):
     def __init__(self, input_size, hid_size):
         # Call base class constructor (this line must be present)
         super(NeuralNet, self).__init__()
-
+        
         # Define layers
         self.layer1 = nn.Linear(input_size, hid_size)    # 2 inputs to 1 output
-        ###
-        self.RelU = nn.ReLU()
+        
         ###
         self.hid1 = nn.Linear(hid_size, hid_size)
         self.relu = nn.ReLU()
@@ -154,7 +150,6 @@ class NeuralNet(nn.Module):
         '''Define forward operation (backward is automatically deduced)'''
         x = self.layer1(x)
         ###
-        x = self.RelU(x)
         ###
         x = self.hid1(x)
         x = self.relu(x)
@@ -166,7 +161,7 @@ class NeuralNet(nn.Module):
 
 # Instantiate model
 inputsize = x.shape[1]
-hidden_size = 4
+hidden_size = 8
 model = NeuralNet(input_size=inputsize, hid_size=hidden_size)
 
 # Define loss function
@@ -221,7 +216,7 @@ def test(model, valid_loader):
         # Make prediction from x (forward)
         y_pred = model(x.float())
         y_pred = torch.reshape(y_pred, (-1,))
-
+        #print(torch.sigmoid(y_pred))
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
 
