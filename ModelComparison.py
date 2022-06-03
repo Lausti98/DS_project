@@ -20,11 +20,11 @@ import matplotlib.pyplot as plt
 
 with torch.no_grad():
     test_data = AdvancedModel.test_data
-    input_size = AdvancedModel.x.shape[1]
+    inp_size = AdvancedModel.x.shape[1]
     # print(input_size)
     hidden_size = 8
     model = AdvancedModel.NeuralNet(
-        input_size=input_size, hid_size=hidden_size)
+        input_size=inp_size, hid_size=hidden_size)
     model.load_state_dict(torch.load("./adv_model.pth"))
     model.eval()
 

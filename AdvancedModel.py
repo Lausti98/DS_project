@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # Connect with database
 conn = psycopg2.connect(
-    "host=localhost dbname=sample_db user=anderssteiness password=XXX")
+    "host=localhost dbname=moviedb user=laust1 password=123")
 cur = conn.cursor()
 
 # A query of all articles with all entities joined
@@ -64,7 +64,7 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
 
 ids = df["content"]
 # print(df['content'].duplicated().any())
-print(df)
+# print(df)
 # print(df[ids.isin(ids[ids.duplicated()])])
 # df
 
@@ -72,7 +72,7 @@ df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
 
 # data splitting into training and test - only 1 feature which is 'content'
-x = df['content'][:10000]  # content only
+# x = df['content'][:10000]  # content only
 
 
 vectorizer = CountVectorizer()
@@ -96,7 +96,7 @@ test_idx = (len(x)-split_idx)//2
 val_x, test_x = remaining_x[:test_idx-2], remaining_x[test_idx-2:-4]
 val_y, test_y = remaining_y[:test_idx-2], remaining_y[test_idx-2:-4]
 test_x_raw = x_df[split_idx+test_idx-2:-4]
-print(test_x.shape, test_x_raw.shape)
+print(train_x.shape, test_x_raw.shape)
 
 """
 # print out the shapes of your resultant feature data
