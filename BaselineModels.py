@@ -92,8 +92,6 @@ def run_model(pipeline, parameters, model_name):
     grid_search.fit(X_train[:10000], Y_train[:10000])
     #print("done in %0.3fs" % (time() - t0))
     print()
-    filename = f'{model_name}_finalized.sav'
-    joblib.dump(grid_search, filename)
 
     print("Best score: %0.3f" % grid_search.best_score_)
     print("Best parameters set:")
@@ -104,6 +102,7 @@ def run_model(pipeline, parameters, model_name):
     # predict y and compute f1 score
     predictions = grid_search.predict(X_test)
     print(f'f1 score of {model_name}: {str(f1_score(Y_test, predictions))}')
+    joblib.dump(grid_search, f'{model_name}_model.sav')
 
 
 ########### SVC CLASSIFIER ###############
@@ -130,10 +129,10 @@ lr_params = Pipelines['LR_parameters']
 run_model(lr_pipe, lr_params, 'Logistic Regression')
 
 
-# ########## SGD CLASSIFIER #################
-# sgd_pipe = Pipelines['SGD_pipeline']
-# sgd_params = Pipelines['SGD_parameters']
-# run_model(sgd_pipe, sgd_params, 'SGD')
+########## SGD CLASSIFIER #################
+sgd_pipe = Pipelines['SGD_pipeline']
+sgd_params = Pipelines['SGD_parameters']
+run_model(sgd_pipe, sgd_params, 'SGD')
 
 
 # Close communication with the database

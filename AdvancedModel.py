@@ -11,7 +11,6 @@ import psycopg2
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.metrics import f1_score
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,7 +23,7 @@ cur = conn.cursor()
 # A query of all articles with all entities joined
 try:
     cur.execute("""
-    select article.id, title, type, domain, article_url, scraped_at, inserted_at, updated_at, a.name, keyword, tag, content
+    select article.id, title, type, domain, article_url, scraped_at, inserted_at, updated_at, a.name, keyword, tag, content  
 	    from article
         inner join has_type ht on article.id = ht.article_id
         inner join type t on ht.type_id = t.id
@@ -62,11 +61,6 @@ df = df.groupby(['id', 'title', 'type', 'domain', 'article_url', 'scraped_at', '
                                                 'authors': lambda x: [x for x in list(set(x.tolist())) if str(x) != '']}
                                                ).reset_index().drop_duplicates(subset='content')
 
-ids = df["content"]
-# print(df['content'].duplicated().any())
-# print(df)
-# print(df[ids.isin(ids[ids.duplicated()])])
-# df
 
 df['target'] = np.where(df['type'] == 'fake', 1, 0)  # fake = 1, real = 0
 
@@ -101,7 +95,7 @@ print(train_x.shape, test_x_raw.shape)
 """
 # print out the shapes of your resultant feature data
 print("\t\t\tFeature Shapes:")
-print("Train set: \t\t{}".format(train_x.shape),
+print("Train set: \t\t{}".format(train_x.shape), 
       "\nValidation set: \t{}".format(val_x.shape),
       "\nTest set: \t\t{}".format(test_x.shape))
 """
@@ -126,12 +120,14 @@ test_loader = DataLoader(test_data, shuffle=False,
 # obtain one batch of training data
 dataiter = iter(train_loader)
 sample_x, sample_y = dataiter.next()
+"""
+print('Sample input size: ', sample_x.size())  # batch_size, seq_length
+print('Sample input: \n', sample_x)
+print()
+print('Sample label size: ', sample_y.size())  # batch_size
+print('Sample label: \n', sample_y)
 
-# print('Sample input size: ', sample_x.size())  # batch_size, seq_length
-# print('Sample input: \n', sample_x)
-# print()
-# print('Sample label size: ', sample_y.size())  # batch_size
-# print('Sample label: \n', sample_y)
+"""
 
 
 class NeuralNet(nn.Module):
@@ -143,10 +139,8 @@ class NeuralNet(nn.Module):
 
         # Define layers
         self.layer1 = nn.Linear(input_size, hid_size)    # 2 inputs to 1 output
+
         ###
-        self.RelU = nn.ReLU()
-        ###
-        self.sig = nn.Sigmoid()
         self.hid1 = nn.Linear(hid_size, hid_size)
         self.relu = nn.ReLU()
         self.layer2 = nn.Linear(hid_size, 1)    # 1 input to 1 output
@@ -155,25 +149,22 @@ class NeuralNet(nn.Module):
         '''Define forward operation (backward is automatically deduced)'''
         x = self.layer1(x)
         ###
-        x = self.RelU(x)
         ###
         x = self.hid1(x)
         x = self.relu(x)
         x = self.layer2(x)
-        x = self.sig(x)
-        # x = F.softmax(x, dim = 1)
 
-        return x
+        return torch.sigmoid(x)
 
 
 # Instantiate model
 inputsize = x.shape[1]
-hidden_size = 4
+hidden_size = 8
 model = NeuralNet(input_size=inputsize, hid_size=hidden_size)
 
 # Define loss function
-# loss_function = nn.CrossEntropyLoss()
-loss_function = nn.BCELoss()
+#loss_function = nn.CrossEntropyLoss()
+loss_function = nn.BCEWithLogitsLoss()
 # Instantiate optimizer
 learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -191,7 +182,7 @@ def train(model, train_loader):
         # Make prediction from x (forward)
         y_pred = model(x.float())
         y_pred = torch.reshape(y_pred, (-1,))
-        # print('y_pred:', y_pred)
+        #print('y_pred:', y_pred)
 
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
@@ -224,7 +215,6 @@ def test(model, valid_loader):
         y_pred = model(x.float())
         y_pred = torch.reshape(y_pred, (-1,))
         # print(torch.sigmoid(y_pred))
-
         # Calculate loss
         loss = loss_function(y_pred.float(), y.float())
 
@@ -234,12 +224,13 @@ def test(model, valid_loader):
     return loss_total/len(valid_loader.dataset)
 
 
-if __name__ == "__main__":
-    epochs = 140
-    for epoch in range(epochs):
-        train_loss = train(model, train_loader)
-        validation_loss = test(model, valid_loader)
+epochs = 1000
+for epoch in range(epochs):
 
-        if epoch % 10 == 0:
-            print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
-                epoch, train_loss.item(), validation_loss.item()))
+    train_loss = train(model, train_loader)
+    validation_loss = test(model, valid_loader)
+    num_correct = 0
+
+    if epoch % 10 == 0:
+        print('Epoch {:4d}\t train loss: {:f}\t validation loss: {:f}'.format(
+            epoch, train_loss.item(), validation_loss.item()))

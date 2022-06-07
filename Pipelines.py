@@ -15,7 +15,8 @@ Pipelines = {
         ('svc', LinearSVC())
     ]),
     'svc_parameters': {
-        "vect__max_df": (0.5, 1.0),
+        "vect__max_df": (0.8),
+        "vect__min_df": (10),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
         'svc__C': (1, 10, 30)
@@ -26,7 +27,8 @@ Pipelines = {
         ('KNN', KNeighborsClassifier())
     ]),
     'KNN_parameters': {
-        "vect__max_df": (0.5, 1.0),
+        "vect__max_df": (0.8),
+        "vect__min_df": (10),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
         'KNN__n_neighbors': (1, 3, 5)
@@ -37,7 +39,8 @@ Pipelines = {
         ('RF', RandomForestClassifier())
     ]),
     'RF_parameters': {
-        "vect__max_df": (0.5, 1.0),
+        "vect__max_df": (0.8),
+        "vect__min_df": (10),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
         'RF__n_estimators': (100, 300),
@@ -49,7 +52,8 @@ Pipelines = {
         ('LR', LogisticRegression(solver='lbfgs', max_iter=500))
     ]),
     'LR_parameters': {
-        "vect__max_df": (0.5, 1.0),
+        "vect__max_df": (0.8),
+        "vect__min_df": (10),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
         'LR__C': (1, 10, 20)
@@ -60,7 +64,8 @@ Pipelines = {
         ('SGD', SGDClassifier())
     ]),
     'SGD_parameters': {
-        "vect__max_df": (0.5, 1.0),
+        "vect__max_df": (0.8),
+        "vect__min_df": (10),
         "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
         'tfidf__norm': ('l1', 'l2'),
         'SGD__penalty': ('l1', 'l2'),

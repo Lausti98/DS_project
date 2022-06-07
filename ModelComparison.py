@@ -19,9 +19,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 with torch.no_grad():
-    test_data = AdvancedModel.test_data
-    inp_size = AdvancedModel.x.shape[1]
-    # print(input_size)
+    # split data into training, validation, and test data (features and labels, x and y)
+    split_idx = int(0.6*len(x))  # about 80%
+    train_x, remaining_x = x[:split_idx], x[split_idx:]
+    train_y, remaining_y = y[:split_idx], y[split_idx:]
+
+    test_idx = (len(x)-split_idx)//2
+    val_x, test_x = remaining_x[:test_idx-2], remaining_x[test_idx-2:-4]
+    val_y, test_y = remaining_y[:test_idx-2], remaining_y[test_idx-2:-4]
+    test_x_raw = x_df[split_idx+test_idx-2:-4]
+
+    inputsize = x.shape[1]
     hidden_size = 8
     model = AdvancedModel.NeuralNet(
         input_size=inp_size, hid_size=hidden_size)
